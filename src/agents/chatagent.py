@@ -54,8 +54,7 @@ def create_crm_agent():
     
     # Initialize Vertex AI LLM
     llm = ChatVertexAI(
-        model_name=Config.MODEL_NAME,
-        project=Config.VERTEX_PROJECT,
+        model_name=Config.VERTEX_AI_MODEL,
         location=Config.VERTEX_LOCATION,
         temperature=0,
         max_tokens=2048,
@@ -120,7 +119,6 @@ def create_crm_agent():
 
 def initialize_agent(
     model_name: str = None,
-    vertex_project: str = None,
     vertex_location: str = None,
     bq_project_id: str = None,
     bq_dataset_id: str = None,
@@ -141,17 +139,17 @@ def initialize_agent(
     
     # Update configuration
     if model_name:
-        Config.MODEL_NAME = model_name
-    if vertex_project:
-        Config.VERTEX_PROJECT = vertex_project
+        Config.VERTEX_AI_MODEL = model_name
+    # if vertex_project:
+    #     Config.VERTEX_PROJECT = vertex_project
     if vertex_location:
         Config.VERTEX_LOCATION = vertex_location
-    if bq_project_id:
-        Config.BQ_PROJECT_ID = bq_project_id
-    if bq_dataset_id:
-        Config.BQ_DATASET_ID = bq_dataset_id
-    if bq_credentials_path:
-        Config.BQ_CREDENTIALS_PATH = bq_credentials_path
+    # if bq_project_id:
+    #     Config.BQ_PROJECT_ID = bq_project_id
+    # if bq_dataset_id:
+    #     Config.BQ_DATASET_ID = bq_dataset_id
+    # if bq_credentials_path:
+    #     Config.BQ_CREDENTIALS_PATH = bq_credentials_path
     
     # Reinitialize BigQuery client if needed
     bq_client = get_bigquery_client()
@@ -160,8 +158,7 @@ def initialize_agent(
     _agent = create_crm_agent()
     
     print(f"✓ CRM Agent initialized")
-    print(f"  Model: {Config.MODEL_NAME}")
-    print(f"  Vertex Project: {Config.VERTEX_PROJECT}")
+    print(f"  Model: {Config.VERTEX_AI_MODEL}")
     # print(f"  BQ Dataset: {Config.BQ_PROJECT_ID}.{Config.BQ_DATASET_ID}")
     
     return _agent
@@ -207,11 +204,11 @@ if __name__ == "__main__":
     
     # Initialize agent
     initialize_agent(
-        model_name="gemma-2-9b-it",  # or "gemini-1.5-flash"
-        vertex_project=os.getenv("VERTEX_AI_PROJECT"),
-        bq_project_id=os.getenv("BQ_PROJECT_ID"),
-        bq_dataset_id=os.getenv("BQ_DATASET_ID"),
-        bq_credentials_path=os.getenv("BQ_CREDENTIALS_PATH")
+        model_name="gemini-1.5-flash",  # or "gemini-1.5-flash"
+        # vertex_project=os.getenv("VERTEX_AI_PROJECT"),
+        # bq_project_id=os.getenv("BQ_PROJECT_ID"),
+        # bq_dataset_id=os.getenv("BQ_DATASET_ID"),
+        # bq_credentials_path=os.getenv("BQ_CREDENTIALS_PATH")
     )
     
     print()
