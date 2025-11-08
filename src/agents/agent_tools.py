@@ -9,14 +9,26 @@ import json
 import os
 # ---------------------------------------------- #
 
+# --- NEW: Define a global client that tools will use ---
+bq_client = None
+
+# --- NEW: Function to set the client from chatagent.py ---
+def set_bigquery_client(client: bigquery.Client):
+    """Sets the global BigQuery client for all tools in this module."""
+    global bq_client
+    bq_client = client
+
 class Config:
     '''
     Configuring CRM Agent and BigQuery Settings
     '''
+    # --- NEW: Moved Vertex settings here ---
+    VERTEX_LOCATION = os.getenv("VERTEX_AI_LOCATION", "us-central1")
+    VERTEX_AI_MODEL= os.getenv("VERTEX_AI_MODEL", "gemini-1.5-flash")
 
     # BigQuery Settings
-    BQ_PROJECT_ID = os.getenv("BQ_PROJECT_ID", "your-project-id")
-    BQ_DATASET_ID = os.getenv("BQ_DATASET_ID", "your-dataset-id")
+    BQ_PROJECT_ID = os.getenv("BIGQUERY_PROJECT_ID")
+    BQ_DATASET_ID = os.getenv("BIGQUERY_DATASET_ID")
     BQ_CREDENTIALS_PATH = os.getenv("BQ_CREDENTIALS_PATH", None)
 
 def get_bigquery_client():
@@ -30,6 +42,8 @@ def get_bigquery_client():
             project=Config.BQ_PROJECT_ID
         )
     else:
+        # Note: This will use default credentials if path is not found
+        print(f"Initializing BQ client for project: {Config.BQ_PROJECT_ID}")
         return bigquery.Client(project=Config.BQ_PROJECT_ID)
 
 @tool
@@ -41,6 +55,10 @@ def list_tables() -> str:
     Returns:
         JSON string with list of tables and their details
     """
+    # Note: No change here, but it now relies on the global bq_client
+    # being set by set_bigquery_client()
+    if bq_client is None:
+        return json.dumps({"error": "BigQuery client not initialized."})
     try:
         tables = bq_client.list_tables(f"{Config.BQ_PROJECT_ID}.{Config.BQ_DATASET_ID}")
         
@@ -75,6 +93,8 @@ def get_table_schema(table_name: str) -> str:
     Returns:
         JSON string with column names, types, and descriptions
     """
+    if bq_client is None:
+        return json.dumps({"error": "BigQuery client not initialized."})
     try:
         table_ref = f"{Config.BQ_PROJECT_ID}.{Config.BQ_DATASET_ID}.{table_name}"
         table = bq_client.get_table(table_ref)
@@ -109,6 +129,8 @@ def query_bigquery(sql_query: str) -> str:
     Returns:
         JSON string with query results
     """
+    if bq_client is None:
+        return json.dumps({"error": "BigQuery client not initialized."})
     try:
         # Security: Only allow SELECT queries
         if not sql_query.strip().upper().startswith("SELECT"):
@@ -151,6 +173,8 @@ def get_customer_summary(customer_id: str = None) -> str:
     Returns:
         JSON string with customer summary
     """
+    if bq_client is None:
+        return json.dumps({"error": "BigQuery client not initialized."})
     try:
         if customer_id:
             # Get specific customer
@@ -194,5 +218,9 @@ def get_current_time() -> str:
 
 if "__main__" == __name__:
     # For testing purposes
-    bq_client = get_bigquery_client()
+    # --- UPDATED: Set the client for testing ---
+    set_bigquery_client(get_bigquery_client())
     
+    # You can add test calls here
+    print("Testing list_tables:")
+    print(list_tables())

@@ -4,7 +4,7 @@ Built with LangChain and LangGraph from scratch
 """
 
 # ---------------------------------------------- #
-from typing import Annotated, TypedDict, Sequence
+from typing import Annotated, TypedDict, Sequence, Union # <-- Added Union
 from datetime import datetime
 
 from google.oauth2 import service_account
@@ -23,22 +23,22 @@ import operator
 import json
 import os
 
-from agent_tools import *
+# --- UPDATED: Import tools, Config, and setters explicitly ---
+from agent_tools import (
+    Config, get_bigquery_client, set_bigquery_client,
+    list_tables, get_table_schema, query_bigquery,
+    get_customer_summary, get_current_time
+)
 from prompts import SYSTEM_GUIDELINES
 # ---------------------------------------------- #
-# NOTE: GLOBAL for the momentDefine tools list
-tools = [get_table_schema, query_bigquery, list_tables]
-
-class Config:
-    """Configuration for the CRM Agent"""
-    # Vertex AI Settings
-    VERTEX_LOCATION = os.getenv("VERTEX_AI_LOCATION", "us-central1")
-    VERTEX_AI_MODEL= os.getenv("VERTEX_AI_MODEL", "ggemini-1.5-flash")
-    
-    # BigQuery Settings
-    # BQ_PROJECT_ID = os.getenv("BQ_PROJECT_ID", "your-project-id")
-    # BQ_DATASET_ID = os.getenv("BQ_DATASET_ID", "your-dataset-id")
-    # BQ_CREDENTIALS_PATH = os.getenv("BQ_CREDENTIALS_PATH", None)
+# --- UPDATED: Define tools list with ALL tools ---
+tools = [
+    get_table_schema, 
+    query_bigquery, 
+    list_tables,
+    get_customer_summary,
+    get_current_time
+]
 
 class AgentState(TypedDict):
     """State of the agent conversation"""
@@ -54,6 +54,7 @@ def create_crm_agent():
     
     # Initialize Vertex AI LLM
     llm = ChatVertexAI(
+        # --- UPDATED: Reads from the imported Config ---
         model_name=Config.VERTEX_AI_MODEL,
         location=Config.VERTEX_LOCATION,
         temperature=0,
@@ -119,6 +120,7 @@ def create_crm_agent():
 
 def initialize_agent(
     model_name: str = None,
+    # vertex_project: str = None, # This was commented out, correct
     vertex_location: str = None,
     bq_project_id: str = None,
     bq_dataset_id: str = None,
@@ -128,38 +130,37 @@ def initialize_agent(
     Initialize the CRM agent with custom configuration
     
     Args:
-        model_name: Vertex AI model name (default: gemma-2-9b-it)
-        vertex_project: GCP project for Vertex AI
+        model_name: Vertex AI model name
         vertex_location: Vertex AI location/region
         bq_project_id: BigQuery project ID
         bq_dataset_id: BigQuery dataset ID
         bq_credentials_path: Path to service account credentials
     """
-    global _agent, bq_client
+    global _agent
     
-    # Update configuration
+    # --- UPDATED: Update the *shared* Config object ---
     if model_name:
         Config.VERTEX_AI_MODEL = model_name
-    # if vertex_project:
-    #     Config.VERTEX_PROJECT = vertex_project
     if vertex_location:
         Config.VERTEX_LOCATION = vertex_location
-    # if bq_project_id:
-    #     Config.BQ_PROJECT_ID = bq_project_id
-    # if bq_dataset_id:
-    #     Config.BQ_DATASET_ID = bq_dataset_id
+    if bq_project_id:
+        Config.BQ_PROJECT_ID = bq_project_id
+    if bq_dataset_id:
+        Config.BQ_DATASET_ID = bq_dataset_id
     # if bq_credentials_path:
     #     Config.BQ_CREDENTIALS_PATH = bq_credentials_path
     
-    # Reinitialize BigQuery client if needed
+    # --- UPDATED: Create and INJECT the client into agent_tools ---
     bq_client = get_bigquery_client()
+    set_bigquery_client(bq_client)
     
     # Create agent
     _agent = create_crm_agent()
     
     print(f"✓ CRM Agent initialized")
     print(f"  Model: {Config.VERTEX_AI_MODEL}")
-    # print(f"  BQ Dataset: {Config.BQ_PROJECT_ID}.{Config.BQ_DATASET_ID}")
+    # --- UPDATED: Reads from the shared Config ---
+    print(f"  BQ Dataset: {Config.BQ_PROJECT_ID}.{Config.BQ_DATASET_ID}")
     
     return _agent
 
@@ -177,7 +178,15 @@ def chat(message: str, conversation_history: list = None) -> dict:
     global _agent
     
     if _agent is None:
-        initialize_agent()
+        # --- UPDATED: Pass runtime env vars to init ---
+        # This ensures env vars are read if provided
+        initialize_agent(
+            model_name=os.getenv("VERTEX_AI_MODEL", Config.VERTEX_AI_MODEL),
+            vertex_location=os.getenv("VERTEX_AI_LOCATION", Config.VERTEX_LOCATION),
+            bq_project_id=os.getenv("BQ_PROJECT_ID"),
+            bq_dataset_id=os.getenv("BQ_DATASET_ID"),
+            bq_credentials_path=os.getenv("BQ_CREDENTIALS_PATH")
+        )
     
     # Prepare messages
     messages = conversation_history or []
@@ -204,10 +213,10 @@ if __name__ == "__main__":
     
     # Initialize agent
     initialize_agent(
-        model_name="gemini-1.5-flash",  # or "gemini-1.5-flash"
-        # vertex_project=os.getenv("VERTEX_AI_PROJECT"),
-        # bq_project_id=os.getenv("BQ_PROJECT_ID"),
-        # bq_dataset_id=os.getenv("BQ_DATASET_ID"),
+        model_name="gemini-2.5-flash", # Note: your file had gemini-2.5-flash, but Config default is 1.5. Make sure this is what you want.
+        vertex_location=os.getenv("VERTEX_AI_LOCATION"), # Added this
+        bq_project_id=os.getenv("BQ_PROJECT_ID"),
+        bq_dataset_id=os.getenv("BQ_DATASET_ID"),
         # bq_credentials_path=os.getenv("BQ_CREDENTIALS_PATH")
     )
     
@@ -230,6 +239,7 @@ if __name__ == "__main__":
             continue
         
         try:
+            # --- UPDATED: No history needed, chat function handles it ---
             result = chat(user_input, conversation_history)
             conversation_history = result["history"]
             
@@ -239,7 +249,7 @@ if __name__ == "__main__":
             print(f"\nError: {str(e)}\n")
             import traceback
             traceback.print_exc()
-    
+
     # Example programmatic usage
     print("\n" + "=" * 60)
     print("Example Queries:")
@@ -247,6 +257,10 @@ if __name__ == "__main__":
     
     examples = [
         "What time is it now?",
+        "What tables are available?",
+        "Show me the schema of the customers table",
+        "How many customers do we have?",
+        "Show me the first 5 customers"
     ]
     
     for example in examples:
