@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# uv
+.uv/
+uv.lock
+
+# Environment variables
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# GCP
+*.json
+!requirements.txt
+!package.json
+!tsconfig.json
+
+# OAuth credentials (sensitive)
+credentials.json
+token.json
+
+# GCP Service Account (sensitive)
+gcp-service-account.json
+*-service-account.json
+service-account*.json
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+.env
+credentials.json
