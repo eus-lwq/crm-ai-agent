@@ -9,27 +9,24 @@ import json
 import os
 # ---------------------------------------------- #
 
-# --- NEW: Define a global client that tools will use ---
-bq_client = None
-
-# --- NEW: Function to set the client from chatagent.py ---
-def set_bigquery_client(client: bigquery.Client):
-    """Sets the global BigQuery client for all tools in this module."""
-    global bq_client
-    bq_client = client
-
 class Config:
     '''
     Configuring CRM Agent and BigQuery Settings
     '''
     # --- NEW: Moved Vertex settings here ---
     VERTEX_LOCATION = os.getenv("VERTEX_AI_LOCATION", "us-central1")
-    VERTEX_AI_MODEL= os.getenv("VERTEX_AI_MODEL", "gemini-1.5-flash")
+    VERTEX_AI_MODEL= os.getenv("VERTEX_AI_MODEL", "gemini-2.5-flash")
 
     # BigQuery Settings
-    BQ_PROJECT_ID = os.getenv("BIGQUERY_PROJECT_ID")
-    BQ_DATASET_ID = os.getenv("BIGQUERY_DATASET_ID")
+    BQ_PROJECT_ID = os.getenv("BQ_PROJECT_ID", 'ai-hackathon-477617')
+    BQ_DATASET_ID = os.getenv("BQ_DATASET_ID", 'CRM_DATA')
     BQ_CREDENTIALS_PATH = os.getenv("BQ_CREDENTIALS_PATH", None)
+
+
+def set_bigquery_client(client: bigquery.Client):
+    """Sets the global BigQuery client for all tools in this module."""
+    global bq_client
+    bq_client = client
 
 def get_bigquery_client():
     """Initialize and return BigQuery client"""

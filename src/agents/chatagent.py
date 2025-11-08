@@ -25,13 +25,12 @@ import os
 
 # --- UPDATED: Import tools, Config, and setters explicitly ---
 from agent_tools import (
-    Config, get_bigquery_client, set_bigquery_client,
-    list_tables, get_table_schema, query_bigquery,
-    get_customer_summary, get_current_time
+    list_tables, get_table_schema, query_bigquery, 
+    get_customer_summary, get_current_time,
+    Config, get_bigquery_client, set_bigquery_client
 )
 from prompts import SYSTEM_GUIDELINES
 # ---------------------------------------------- #
-# --- UPDATED: Define tools list with ALL tools ---
 tools = [
     get_table_schema, 
     query_bigquery, 
@@ -39,6 +38,20 @@ tools = [
     get_customer_summary,
     get_current_time
 ]
+def get_bigquery_client():
+    """Initialize and return BigQuery client"""
+    if Config.BQ_CREDENTIALS_PATH and os.path.exists(Config.BQ_CREDENTIALS_PATH):
+        credentials = service_account.Credentials.from_service_account_file(
+            Config.BQ_CREDENTIALS_PATH
+        )
+        return bigquery.Client(
+            credentials=credentials,
+            project=Config.BQ_PROJECT_ID
+        )
+    else:
+        # Note: This will use default credentials if path is not found
+        print(f"Initializing BQ client for project: {Config.BQ_PROJECT_ID}")
+        return bigquery.Client(project=Config.BQ_PROJECT_ID)
 
 class AgentState(TypedDict):
     """State of the agent conversation"""
@@ -217,7 +230,6 @@ if __name__ == "__main__":
         vertex_location=os.getenv("VERTEX_AI_LOCATION"), # Added this
         bq_project_id=os.getenv("BQ_PROJECT_ID"),
         bq_dataset_id=os.getenv("BQ_DATASET_ID"),
-        # bq_credentials_path=os.getenv("BQ_CREDENTIALS_PATH")
     )
     
     print()
