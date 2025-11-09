@@ -1,39 +1,30 @@
-# CRM AI Agent Backend
+# Zero-Click CRM
 
-A FastAPI-based backend service for extracting structured CRM data from unstructured interactions (emails, voice calls, calendar events) using LangChain agents and Google Vertex AI. The service automatically monitors Gmail, extracts structured data, stores it in BigQuery, and provides an intelligent chat agent for querying and managing CRM data.
+**Zero-Click CRM** reimagines relationship management — no typing, no logging, no manual updates.
+The system listens to **real communication data** (voice notes, calls, and emails) and automatically extracts, updates, and analyzes CRM records.
 
-## 🏗️ Architecture
+Whenever a sales call recording or follow-up email lands in the system, it:
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Frontend (React/Vite)                    │
-│              http://localhost:5173 or 8080                   │
-└────────────────────────┬────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────────┐
-│              FastAPI Backend (Port 8001)                    │
-│  ┌──────────────┐  ┌──────────────┐  ┌─────────────────┐    │
-│  │ Chat Agent   │  │ Email Monitor│  │ Google Calendar │    │     │
-│  │ (LangChain)  │  │ (Gmail API)  │  │ Agent           │     │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬──────────┘     │
-│         │                  │                  │              │
-│         └──────────────────┼──────────────────┘             │
-│                            │                                 │
-│                   ┌────────▼─────────┐                       │
-│                   │ Email Extractor │                       │
-│                   │ (Vertex AI)     │                       │
-│                   └────────┬────────┘                       │
-└────────────────────────────┼────────────────────────────────┘
-                             │
-                             ▼
-                    ┌─────────────────┐
-                    │   BigQuery       │
-                    │  CRM_DATA.deals  │
-                    └─────────────────┘
-```
+1. **Transcribes** the content (voice → text via Groq Whisper).
+2. **Extracts structured CRM fields** using **Gemini 2.0 Flash-Lite** (contact, company, next step, deal value, etc.).
+3. **Updates BigQuery** with fresh records, unifying voice and email data.
+4. **Engages users** through a **multi-agent chatbot** (Gemini 2.5 Flash) — capable of:
 
-## ✨ Features
+   * Querying BigQuery via natural language
+   * Drafting and replying to customer emails
+   * Scheduling meetings in Google Calendar
+   * Generating insights like:
+
+     > “Show deals with no follow-up in 7 days”
+     > “Draft a reply to Acme confirming next week’s demo”
+
+The result: A **self-maintaining, intelligent CRM** that operates across channels — **voice, email, and chat**.
+
+## Architecture
+<img width="1148" height="562" alt="Screenshot 2025-11-08 at 11 57 46 PM" src="https://github.com/user-attachments/assets/cb7c19c6-e1c2-46e1-87d4-0bd309df97fb" />
+
+
+## Features
 
 - **🤖 Intelligent Chat Agent**: Query BigQuery tables, check/edit calendar events, send emails using natural language
 - **📧 Email Monitoring**: Automatically monitors Gmail inbox every 1 second, extracts structured CRM data, and stores in BigQuery
@@ -43,7 +34,7 @@ A FastAPI-based backend service for extracting structured CRM data from unstruct
 - **🎤 Voice Processing**: Transcribe audio files and extract CRM data from voice interactions
 - **🔄 Real-time Sync**: Frontend syncs with BigQuery every 1 second for real-time updates
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Framework**: FastAPI 0.104.1
 - **AI/ML**: 
@@ -59,7 +50,7 @@ A FastAPI-based backend service for extracting structured CRM data from unstruct
 - **Audio Processing**: OpenAI Whisper, Groq API
 - **Data Validation**: Pydantic 2.5.0
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 crm-ai-agent/
@@ -101,7 +92,7 @@ crm-ai-agent/
 └── README.md
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
