@@ -1,5 +1,5 @@
 # Zero-Click CRM
-front-end: https://github.com/eus-lwq/langgraph-crm-insight
+Try it out: https://github.com/eus-lwq/langgraph-crm-insight
 
 **Zero-Click CRM** reimagines relationship management — no typing, no logging, no manual updates.
 The system listens to **real communication data** (voice notes, calls, and emails) and automatically extracts, updates, and analyzes CRM records.
