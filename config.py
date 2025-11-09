@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     """Application settings."""
     
     # GCP Configuration
-    gcp_project_id: str
+    gcp_project_id: str = "ai-hackathon-477617"  # Default to user's project
     gcp_region: str = "us-central1"
     bigquery_dataset: str = "CRM_DATA"  # Default to uppercase to match user's example
     
@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     
     # API Configuration
     api_host: str = "0.0.0.0"
-    api_port: int = 8080
+    api_port: int = 8001  # Changed to 8001 to avoid port conflicts
     
     # Gmail API Configuration
     gmail_client_id: Optional[str] = None

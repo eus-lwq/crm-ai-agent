@@ -35,12 +35,12 @@ from src.agents.gmail_agent import GmailAgent
 ```
 
 ```python
-# OLD (voice-pipeline)
+# OLD (voice-pipeline - now removed)
 from voice_pipeline.src.transcriber import transcribe_audio_groq
 from voice_pipeline.src.extractor import extract_crm_fields
 
 # NEW
-from services.voice_service import VoiceService, process_audio_file, extract_crm_fields_from_voice
+from services.voice_service import VoiceService, transcribe_audio_groq, extract_crm_fields_from_voice
 ```
 
 ### Using Services

@@ -213,6 +213,7 @@ class EmailExtractorAgent:
                 "follow_up_date": normalize_follow_up_date(extracted_data.follow_up_date),
                 "notes": to_none_if_empty(extracted_data.notes),
                 "interaction_medium": "email",  # Always set to "email" for email extractor
+                "created_at": datetime.utcnow().isoformat(),  # Add timestamp for tracking
             }
             
             # Final check: ensure no empty strings remain (BigQuery requires None, not empty strings)
@@ -320,6 +321,7 @@ class EmailExtractorAgent:
                     bigquery.SchemaField("follow_up_date", "DATE", mode="NULLABLE"),
                     bigquery.SchemaField("notes", "STRING", mode="NULLABLE"),
                     bigquery.SchemaField("interaction_medium", "STRING", mode="NULLABLE"),
+                    bigquery.SchemaField("created_at", "TIMESTAMP", mode="NULLABLE"),
                 ]
                 
                 table = bigquery.Table(table_id, schema=schema)

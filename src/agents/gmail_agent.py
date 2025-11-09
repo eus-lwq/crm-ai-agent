@@ -57,6 +57,45 @@ class GmailAgent:
                     "It should be the OAuth 2.0 Client ID credentials (JSON format)."
                 )
             
+            # Check if token exists and validate it
+            if os.path.exists(self.token_path):
+                try:
+                    from google.oauth2.credentials import Credentials
+                    from google.auth.transport.requests import Request
+                    import json
+                    
+                    # Try to load and validate the token
+                    with open(self.token_path, 'r') as f:
+                        token_data = json.load(f)
+                    
+                    # Check if token is expired
+                    from datetime import datetime, timezone
+                    if 'expiry' in token_data:
+                        expiry = datetime.fromisoformat(token_data['expiry'].replace('Z', '+00:00'))
+                        if expiry < datetime.now(timezone.utc):
+                            print(f"⚠️  Token expired on {expiry}. Deleting to force re-authentication...")
+                            os.remove(self.token_path)
+                        else:
+                            # Try to refresh if needed
+                            try:
+                                creds = Credentials.from_authorized_user_file(self.token_path)
+                                if creds.expired and creds.refresh_token:
+                                    print("🔄 Refreshing expired token...")
+                                    creds.refresh(Request())
+                                    # Save refreshed token
+                                    with open(self.token_path, 'w') as token:
+                                        token.write(creds.to_json())
+                                    print("✅ Token refreshed successfully!")
+                            except Exception as refresh_error:
+                                print(f"⚠️  Could not refresh token: {refresh_error}")
+                                print("   Deleting token to force re-authentication...")
+                                os.remove(self.token_path)
+                except Exception as token_error:
+                    print(f"⚠️  Error validating token: {token_error}")
+                    print("   Deleting token to force re-authentication...")
+                    if os.path.exists(self.token_path):
+                        os.remove(self.token_path)
+            
             # Initialize the Gmail Toolkit
             # It will look for 'credentials.json' in the specified path
             # On first run, it will open a browser for you to authorize

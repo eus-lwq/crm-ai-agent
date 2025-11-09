@@ -37,6 +37,8 @@ dependencies = [
     # Voice pipeline dependencies
     "google-genai>=0.2.0",
     "requests>=2.31.0",
+    # Testing
+    "httpx>=0.25.2",  # For TestClient
 ]
 
 [project.optional-dependencies]
