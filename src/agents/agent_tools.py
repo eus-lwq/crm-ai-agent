@@ -22,6 +22,9 @@ class Config:
     BQ_DATASET_ID = os.getenv("BQ_DATASET_ID", 'CRM_DATA')
     BQ_CREDENTIALS_PATH = os.getenv("BQ_CREDENTIALS_PATH", None)
 
+# Global BigQuery client
+bq_client = None
+
 def set_bigquery_client(client: bigquery.Client):
     """Sets the global BigQuery client for all tools in this module."""
     global bq_client

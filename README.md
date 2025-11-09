@@ -254,7 +254,7 @@ See `docs/GMAIL_SETUP.md` for setup instructions.
 Uses LangChain's GmailToolkit with agent executor:
 
 ```python
-from services.gmail_agent import GmailAgent
+from src.agents.gmail_agent import GmailAgent
 
 agent = GmailAgent()  # Uses credentials.json
 response = await agent.send_email(

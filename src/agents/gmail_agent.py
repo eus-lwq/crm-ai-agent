@@ -6,6 +6,14 @@ from langchain_google_community import GmailToolkit
 from langchain_core.prompts import PromptTemplate
 from langchain_google_vertexai import ChatVertexAI
 
+import sys
+from pathlib import Path
+
+# Add project root to path for imports
+project_root = Path(__file__).parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
 from config import settings
 
 # Set up GCP credentials if service account path is provided

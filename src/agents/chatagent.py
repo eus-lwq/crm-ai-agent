@@ -17,19 +17,23 @@ from langchain_google_vertexai import ChatVertexAI
 from langchain_core.tools import tool
 
 from langgraph.graph import StateGraph, END
-from langgraph.prebuilt import ToolNode
+try:
+    from langgraph.prebuilt import ToolNode
+except ImportError:
+    # Fallback for older langgraph versions
+    from langgraph.prebuilt.tool_node import ToolNode
 
 import operator
 import json
 import os
 
 # --- UPDATED: Import tools, Config, and setters explicitly ---
-from agent_tools import (
+from src.agents.agent_tools import (
     list_tables, get_table_schema, query_bigquery, 
     get_customer_summary, get_current_time,
     Config, get_bigquery_client, set_bigquery_client
 )
-from prompts import SYSTEM_GUIDELINES
+from src.agents.prompts import SYSTEM_GUIDELINES
 # ---------------------------------------------- #
 tools = [
     get_table_schema, 
