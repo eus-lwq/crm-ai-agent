@@ -1,5 +1,5 @@
 # ---------------------------------------------- #
-from typing import Annotated, TypedDict, Union, Optional
+from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
 from datetime import datetime
 
@@ -8,7 +8,7 @@ from google.cloud import bigquery
 import json
 import os
 # ---------------------------------------------- #
-
+bq_client = None
 class Config:
     '''
     Configuring CRM Agent and BigQuery Settings
@@ -42,6 +42,36 @@ def get_bigquery_client():
         print(f"Initializing BQ client for project: {Config.BQ_PROJECT_ID}")
         return bigquery.Client(project=Config.BQ_PROJECT_ID)
 
+_sql_agent_app = None # Global SQL agent placeholder
+
+def set_sql_agent(agent_app: object):
+    """Sets the global SQL agent app for the delegate tool."""
+    global _sql_agent_app
+    _sql_agent_app = agent_app
+    print("--- [INJECT] SQL Agent injected into agent_tools successfully. ---")
+
+
+@tool
+def delegate_sql_task(natural_language_question: str) -> str:
+    """
+    Use this tool when the user asks a question about data, customers,
+    tables, or anything that requires a database query.
+    """
+    print(f"--- [DELEGATE_TOOL] Received task: {natural_language_question} ---")
+
+    if _sql_agent_app is None:
+        print("--- [DELEGATE_TOOL] ERROR: SQL Agent not initialized. ---")
+        return json.dumps({"error": "SQL Agent is not available. Please contact support."})
+    
+    response = _sql_agent_app.invoke({
+        "messages": [HumanMessage(content=natural_language_question)]
+    })
+    final_message = response["messages"][-1]
+    
+    if final_message.content:
+        return final_message.content
+    else:
+        return json.dumps({"error": "SQL Agent returned no content."})
 @tool
 def list_tables() -> str:
     """
@@ -200,23 +230,7 @@ def get_customer_summary(customer_id: str = None) -> str:
     
     except Exception as e:
         return json.dumps({"error": str(e)})
-
 @tool
 def get_current_time() -> str:
-    """
-    Get the current date and time.
-    
-    Returns:
-        Current timestamp as string
-    """
+    """Get the current date and time."""
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-
-if "__main__" == __name__:
-    # For testing purposes
-    # --- UPDATED: Set the client for testing ---
-    set_bigquery_client(get_bigquery_client())
-    
-    # You can add test calls here
-    print("Testing list_tables:")
-    print(list_tables())
