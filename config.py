@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     # GCP Configuration
     gcp_project_id: str
     gcp_region: str = "us-central1"
-    bigquery_dataset: str = "crm_data"
+    bigquery_dataset: str = "CRM_DATA"  # Default to uppercase to match user's example
     
     # Vertex AI Configuration
     vertex_ai_location: str = "us-central1"

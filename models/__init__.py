@@ -1,21 +1,5 @@
-"""Models package."""
-from .schemas import (
-    InteractionEvent,
-    ProcessedEvent,
-    ExtractedData,
-    ParsingResponse,
-    Contact,
-    Sentiment,
-    Channel,
-)
+"""Models package for CRM AI Agent."""
+from models.email_schemas import EmailCRMData
 
-__all__ = [
-    "InteractionEvent",
-    "ProcessedEvent",
-    "ExtractedData",
-    "ParsingResponse",
-    "Contact",
-    "Sentiment",
-    "Channel",
-]
+__all__ = ["EmailCRMData"]
 
