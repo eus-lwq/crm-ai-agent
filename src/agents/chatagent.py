@@ -38,20 +38,6 @@ tools = [
     get_customer_summary,
     get_current_time
 ]
-def get_bigquery_client():
-    """Initialize and return BigQuery client"""
-    if Config.BQ_CREDENTIALS_PATH and os.path.exists(Config.BQ_CREDENTIALS_PATH):
-        credentials = service_account.Credentials.from_service_account_file(
-            Config.BQ_CREDENTIALS_PATH
-        )
-        return bigquery.Client(
-            credentials=credentials,
-            project=Config.BQ_PROJECT_ID
-        )
-    else:
-        # Note: This will use default credentials if path is not found
-        print(f"Initializing BQ client for project: {Config.BQ_PROJECT_ID}")
-        return bigquery.Client(project=Config.BQ_PROJECT_ID)
 
 class AgentState(TypedDict):
     """State of the agent conversation"""

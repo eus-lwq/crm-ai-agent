@@ -13,7 +13,7 @@ class Config:
     '''
     Configuring CRM Agent and BigQuery Settings
     '''
-    # --- NEW: Moved Vertex settings here ---
+    # Vertex AI Settings
     VERTEX_LOCATION = os.getenv("VERTEX_AI_LOCATION", "us-central1")
     VERTEX_AI_MODEL= os.getenv("VERTEX_AI_MODEL", "gemini-2.5-flash")
 
@@ -21,7 +21,6 @@ class Config:
     BQ_PROJECT_ID = os.getenv("BQ_PROJECT_ID", 'ai-hackathon-477617')
     BQ_DATASET_ID = os.getenv("BQ_DATASET_ID", 'CRM_DATA')
     BQ_CREDENTIALS_PATH = os.getenv("BQ_CREDENTIALS_PATH", None)
-
 
 def set_bigquery_client(client: bigquery.Client):
     """Sets the global BigQuery client for all tools in this module."""
