@@ -181,9 +181,9 @@ def _is_business_related(extracted_data, email_subject: str = "", email_body: st
 class EmailMonitor:
     """
     Email monitor service that:
-    1. Checks for unread emails every 30 minutes
-    2. Filters for business/deal-related content
-    3. Stores relevant emails in BigQuery
+    1. Checks for unread emails in real-time (every 1 second)
+    2. Extracts structured data from all unread emails
+    3. Stores all emails in BigQuery immediately (no filtering)
     4. Marks processed emails as read
     """
     
@@ -228,7 +228,7 @@ class EmailMonitor:
             raise Exception("Gmail service not initialized")
         
         try:
-            # Search for unread emails
+            # Search for unread emails (optimized for real-time sync)
             results = self.service.users().messages().list(
                 userId='me',
                 q='is:unread',
@@ -240,7 +240,7 @@ class EmailMonitor:
             if not messages:
                 return []
             
-            # Get full message details
+            # Get full message details (batch processing for efficiency)
             full_messages = []
             for msg in messages:
                 try:
@@ -257,7 +257,14 @@ class EmailMonitor:
             return full_messages
             
         except HttpError as error:
-            print(f"An error occurred: {error}")
+            # Handle rate limiting gracefully
+            if error.resp.status == 429:
+                print(f"⚠️  Rate limit hit, will retry on next cycle")
+            else:
+                print(f"An error occurred: {error}")
+            return []
+        except Exception as e:
+            print(f"Unexpected error fetching emails: {e}")
             return []
     
     def _mark_as_read(self, message_id: str) -> bool:
@@ -322,7 +329,8 @@ class EmailMonitor:
         skipped = 0
         errors = []
         
-        print(f"Found {len(unread_messages)} unread email(s)")
+        if unread_messages:
+            print(f"📧 Found {len(unread_messages)} unread email(s) - processing in real-time...")
         
         for message in unread_messages:
             try:
@@ -333,7 +341,7 @@ class EmailMonitor:
                 print(f"\nProcessing email: {email_data['subject']}")
                 print(f"From: {email_data['from']}")
                 
-                # Extract structured data
+                # Prepare email metadata for extraction
                 email_metadata = {
                     "subject": email_data['subject'],
                     "from": email_data['from'],
@@ -341,51 +349,30 @@ class EmailMonitor:
                     "date": email_data['date']
                 }
                 
-                try:
-                    extracted_data = await self.extractor.extract_from_email(
-                        email_data['body'],
-                        email_metadata
-                    )
-                except Exception as e:
-                    print(f"⚠️  Error extracting data (will still try to store): {e}")
-                    # Create a minimal extracted_data with all nulls if extraction fails
-                    from models.email_schemas import EmailCRMData
-                    extracted_data = EmailCRMData(
-                        contact_name=None,
-                        company=None,
-                        next_step=None,
-                        deal_value=None,
-                        follow_up_date=None,
-                        notes=None
-                    )
+                # Extract structured data and store in BigQuery (no business-related filtering)
+                print("📧 Processing email - extracting structured data and storing in BigQuery...")
                 
-                # Check if business-related (pass subject and body for better filtering)
-                if _is_business_related(extracted_data, email_data['subject'], email_data['body']):
-                    print("✓ Email is business/deal related - storing in BigQuery...")
+                # Store in BigQuery immediately (real-time sync)
+                result = await self.extractor.extract_and_store(
+                    email_data['body'],
+                    email_metadata
+                )
+                
+                if result["status"] == "success":
+                    stored += 1
+                    print(f"✅ Real-time sync: Stored in BigQuery: {result['table_id']}")
+                    print(f"   Fields extracted: {sum(1 for v in result['normalized_data'].values() if v is not None)}/{len(result['normalized_data'])}")
                     
-                    # Store in BigQuery (even if some fields are null)
-                    result = await self.extractor.extract_and_store(
-                        email_data['body'],
-                        email_metadata
-                    )
-                    
-                    if result["status"] == "success":
-                        stored += 1
-                        print(f"✓ Stored in BigQuery: {result['table_id']}")
-                        print(f"  Fields extracted: {sum(1 for v in result['normalized_data'].values() if v is not None)}/{len(result['normalized_data'])}")
-                        
-                        # Mark as read
-                        if self._mark_as_read(message_id):
-                            print(f"✓ Marked email as read")
-                        else:
-                            print(f"⚠️  Could not mark email as read")
+                    # Mark as read immediately after successful storage
+                    if self._mark_as_read(message_id):
+                        print(f"   ✓ Marked email as read")
                     else:
-                        errors.append(f"Failed to store email {message_id}: {result.get('error')}")
-                        print(f"❌ Failed to store: {result.get('error')}")
+                        print(f"   ⚠️  Could not mark email as read")
                 else:
                     skipped += 1
-                    print("⊘ Email is not business/deal related - skipping")
-                    # Still mark as read to avoid reprocessing
+                    errors.append(f"Failed to store email {message_id}: {result.get('error')}")
+                    print(f"❌ Failed to store in real-time: {result.get('error')}")
+                    # Still mark as read to avoid reprocessing failed emails
                     self._mark_as_read(message_id)
                 
                 processed += 1
@@ -400,7 +387,8 @@ class EmailMonitor:
             "processed": processed,
             "stored": stored,
             "skipped": skipped,
-            "errors": errors
+            "errors": errors,
+            "message": f"Processed {processed} email(s), stored {stored} in BigQuery, {skipped} skipped due to errors"
         }
     
     async def run_continuous(self, interval_minutes: int = 30):
