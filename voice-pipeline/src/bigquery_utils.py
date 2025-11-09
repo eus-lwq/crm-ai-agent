@@ -20,7 +20,7 @@ def normalize_follow_up_date(value):
         return None
     parsed = dateparser.parse(value)
     if parsed:
-        return parsed.date().isoformat()  # YYYY-MM-DD
+        return parsed.date().isoformat()  
     return None
 
 def insert_into_bigquery(data: dict):
@@ -41,4 +41,4 @@ def insert_into_bigquery(data: dict):
     errors = client.insert_rows_json(table_id, [row])
     if errors:
         raise RuntimeError(f"BigQuery insert failed: {errors}")
-    print("✅ Row inserted successfully into BigQuery.")
+    print("Row inserted successfully into BigQuery.")

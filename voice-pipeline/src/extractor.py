@@ -2,7 +2,7 @@ from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
 
-# --- Step 1: Define structured schema ---
+# Schema 
 class CRMData(BaseModel):
     contact_name: str | None = Field(None, description="Name of the contact person")
     company: str | None = Field(None, description="Company name")
@@ -12,18 +12,17 @@ class CRMData(BaseModel):
     notes: str | None = Field(None, description="Additional context or details")
     interaction_medium: str = Field("phone_call", description="Mode of communication (always 'phone_call')")
 
-# --- Step 2: Function to call Gemini ---
+# Gemini Call
 def extract_crm_fields(transcript: str) -> dict:
     """
     Uses Gemini 2.0 Flash model on Vertex AI to extract structured CRM data
     from a sales conversation transcript.
     """
 
-    # Automatically authenticates via Cloud Function’s service account
     client = genai.Client(vertexai=True)
     model = "gemini-2.0-flash-lite-001"
 
-    # Build prompt
+    # prompt
     prompt = f"""
     Extract the following CRM fields from this sales conversation:
     - contact name
@@ -37,7 +36,6 @@ def extract_crm_fields(transcript: str) -> dict:
     {transcript}
     """
 
-    # Get JSON response with strict schema
     response = client.models.generate_content(
         model=model,
         contents=[prompt],
@@ -47,10 +45,8 @@ def extract_crm_fields(transcript: str) -> dict:
         ),
     )
 
-    # Validate & parse
     crm = CRMData.model_validate_json(response.text)
 
-    # Always enforce interaction_medium
     crm.interaction_medium = "phone_call"
 
     print("Parsed CRM data:", crm.dict())
