@@ -5,3 +5,12 @@ langchain-groq
 requests
 pydantic
 dateparser
+
+langchain
+langchain-core
+langchain-google-vertexai
+google-cloud-aiplatform
+pydantic
+
+google-genai
+

@@ -1,42 +1,57 @@
-import os
-from langchain_groq import ChatGroq
-from langchain_core.prompts import PromptTemplate
-from langchain_core.output_parsers import PydanticOutputParser
+from google import genai
+from google.genai import types
 from pydantic import BaseModel, Field
 
-# Define the structured schema
+# --- Step 1: Define structured schema ---
 class CRMData(BaseModel):
     contact_name: str | None = Field(None, description="Name of the contact person")
-    company: str | None = Field(None, description="Name of the company")
-    next_step: str | None = Field(None, description="Next action item or meeting")
+    company: str | None = Field(None, description="Company name")
+    next_step: str | None = Field(None, description="Next step or action")
     deal_value: str | None = Field(None, description="Potential deal value")
-    follow_up_date: str | None = Field(None, description="Date for follow-up, if mentioned")
+    follow_up_date: str | None = Field(None, description="Follow-up date if mentioned")
     notes: str | None = Field(None, description="Additional context or details")
+    interaction_medium: str = Field("phone_call", description="Mode of communication (always 'phone_call')")
 
+# --- Step 2: Function to call Gemini ---
 def extract_crm_fields(transcript: str) -> dict:
-    api_key = os.environ.get("GROQ_API_KEY")
-    if not api_key:
-        raise ValueError("Missing GROQ_API_KEY environment variable")
+    """
+    Uses Gemini 2.0 Flash model on Vertex AI to extract structured CRM data
+    from a sales conversation transcript.
+    """
 
-    llm = ChatGroq(
-        model="llama-3.3-70b-versatile",
-        api_key=api_key,
-        temperature=0
-    )
+    # Automatically authenticates via Cloud Function’s service account
+    client = genai.Client(vertexai=True)
+    model = "gemini-2.0-flash-lite-001"
 
-    parser = PydanticOutputParser(pydantic_object=CRMData)
+    # Build prompt
+    prompt = f"""
+    Extract the following CRM fields from this sales conversation:
+    - contact name
+    - company
+    - next step
+    - deal value
+    - follow-up date
+    - notes
 
-    prompt = PromptTemplate(
-        input_variables=["conversation"],
-        template=(
-            "Extract the following fields from this sales conversation:\n"
-            "- contact name\n- company\n- next step\n- deal value\n- follow-up date\n- notes\n\n"
-            "Conversation:\n{conversation}\n\n"
-            "Return output that matches this JSON schema:\n{format_instructions}"
+    Conversation:
+    {transcript}
+    """
+
+    # Get JSON response with strict schema
+    response = client.models.generate_content(
+        model=model,
+        contents=[prompt],
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_schema=CRMData.model_json_schema(),
         ),
-        partial_variables={"format_instructions": parser.get_format_instructions()},
     )
 
-    chain = prompt | llm | parser
-    result = chain.invoke({"conversation": transcript})
-    return result.dict()
+    # Validate & parse
+    crm = CRMData.model_validate_json(response.text)
+
+    # Always enforce interaction_medium
+    crm.interaction_medium = "phone_call"
+
+    print("Parsed CRM data:", crm.dict())
+    return crm.dict()
