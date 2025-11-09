@@ -9,9 +9,9 @@ venv/
 ENV/
 .venv
 
-# uv
-.uv/
-uv.lock
+# # uv
+# .uv/
+# uv.lock
 
 # Environment variables
 .env
