@@ -1,0 +1,11 @@
+google-cloud-storage
+google-cloud-bigquery
+langchain
+langchain-groq
+requests
+pydantic
+dateparser
+langchain-core
+google-cloud-aiplatform
+google-genai
+
