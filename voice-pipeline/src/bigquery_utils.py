@@ -35,6 +35,7 @@ def insert_into_bigquery(data: dict):
         "deal_value": normalize_deal_value(data.get("deal_value")),
         "follow_up_date": normalize_follow_up_date(data.get("follow_up_date")),
         "notes": data.get("notes"),
+        "interaction_medium": data.get("interaction_medium", "phone_call"),  
     }
 
     errors = client.insert_rows_json(table_id, [row])
